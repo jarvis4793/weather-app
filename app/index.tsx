@@ -6,10 +6,13 @@ import { fetchPublic } from '@/api/fetch';
 import { useQuery } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { Card } from '@rneui/base';
+import LocationWeatherDetail from '@/components/LocationWeatherDetail';
 
 export default function Index() {
     const insets = useSafeAreaInsets();
     const [text, onChangeText] = useState('');
+    const [isOverlayVisible, setOverlayVisible] = useState(false);
+
     const styles = {
         container: {
             flex: 1,
@@ -122,6 +125,7 @@ export default function Index() {
                 <Pressable
                     onPress={() => {
                         console.log("pressed")
+                        setOverlayVisible(true)
                     }}
                 >
                     <View>
@@ -136,7 +140,6 @@ export default function Index() {
                                     }
                                 </Text>
                             </View>
-
                             {
                                 allWeatherData?.temperature.data.find((elem: TemperatureData) => elem.place === address?.city) ? (
                                     <View style={styles.temperatureContainer}>
@@ -152,10 +155,15 @@ export default function Index() {
                         </Card>
                     </View>
                 </Pressable>
+
+
                 <View>
                     {allWeatherData?.temperature.data.map((temperatureData: TemperatureData, index: number) => {
 
                         if (temperatureData.place === address?.city) {
+                            return null
+                        }
+                        if (text !== "" && !temperatureData.place.includes(text)) {
                             return null
                         }
                         return (
@@ -178,6 +186,9 @@ export default function Index() {
                     })}
                 </View>
             </ScrollView>
+            {isOverlayVisible && (
+                <LocationWeatherDetail isVisible={isOverlayVisible} onCloseOverlay={() => setOverlayVisible(false)} />
+            )}
         </View >
     );
 }
