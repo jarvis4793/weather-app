@@ -8,11 +8,15 @@ import * as Location from 'expo-location';
 import { Card } from '@rneui/base';
 import LocationWeatherDetail from '@/components/LocationWeatherDetail';
 
+
+type WeatherLocationIndex = {
+    [key: string]: number;
+};
 export default function Index() {
     const insets = useSafeAreaInsets();
     const [text, onChangeText] = useState('');
     const [isOverlayVisible, setOverlayVisible] = useState(false);
-
+    const [weatherLocationIndex, setWeatherLocationIndex] = useState<WeatherLocationIndex>({});
     const styles = {
         container: {
             flex: 1,
@@ -67,8 +71,7 @@ export default function Index() {
         queryKey: [`https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc
 `, "/", "get"],
         queryFn: async ({ queryKey }) =>
-            await fetchPublic(queryKey[0], queryKey[1], queryKey[2]),
-
+            await fetchPublic(queryKey[0], queryKey[1], queryKey[2])
     });
 
     const reverseGeocode = async () => {
@@ -100,8 +103,22 @@ export default function Index() {
         getPermissions();
     }, []);
     useEffect(() => {
-        reverseGeocode(); // Call reverseGeocode when location changes
+        reverseGeocode();
     }, [location]);
+
+    useEffect(() => {
+        if (allWeatherData) {
+            let newWeatherLocationIndex: { [key: string]: number } = {};
+            {
+                allWeatherData?.temperature.data.map((temperatureData: TemperatureData, index: number) => {
+                    newWeatherLocationIndex[temperatureData.place] = index;
+                })
+            }
+            setWeatherLocationIndex(newWeatherLocationIndex);
+            console.log("newWeatherLocationIndex: ");
+            console.log(newWeatherLocationIndex);
+        }
+    }, [allWeatherData, location])
     return (
         <View style={styles.container}>
             <Text style={styles.text}>香港各區氣溫</Text>
@@ -141,16 +158,24 @@ export default function Index() {
                                 </Text>
                             </View>
                             {
-                                allWeatherData?.temperature.data.find((elem: TemperatureData) => elem.place === address?.city) ? (
+                                address?.city && weatherLocationIndex[address?.city] !== undefined && allWeatherData !== null ? (
                                     <View style={styles.temperatureContainer}>
                                         <Text style={styles.temperatureText}>
-                                            {allWeatherData.temperature.data.find((elem: TemperatureData) => elem.place === address?.city)?.value}
+                                            {allWeatherData.temperature.data[weatherLocationIndex[address?.city]].value}
                                         </Text>
                                         <Text style={styles.temperatureSign}>
-                                            °{allWeatherData.temperature.data.find((elem: TemperatureData) => elem.place === address?.city)?.unit}
+                                            ° {allWeatherData.temperature.data[weatherLocationIndex[address?.city]].unit}
                                         </Text>
                                     </View>
-                                ) : null
+                                ) : (
+                                    <View style={styles.temperatureContainer}>
+                                        <Text style={styles.temperatureText}>
+                                            {allWeatherData?.temperature.data[1].value}
+                                        </Text>
+                                        <Text style={styles.temperatureSign}>
+                                            °{allWeatherData?.temperature.data[1].unit}
+                                        </Text>
+                                    </View>)
                             }
                         </Card>
                     </View>
@@ -187,7 +212,7 @@ export default function Index() {
                 </View>
             </ScrollView>
             {isOverlayVisible && (
-                <LocationWeatherDetail isVisible={isOverlayVisible} onCloseOverlay={() => setOverlayVisible(false)} />
+                <LocationWeatherDetail isVisible={isOverlayVisible} onCloseBottomSheet={() => setOverlayVisible(false)} />
             )}
         </View >
     );
