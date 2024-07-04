@@ -50,3 +50,9 @@ type WeatherData = {
     value: number;
     place: string;
   }
+
+  type CurrentLocationWeatherData = {
+    name: string;
+    humidityData: HumidityData;
+    temperatureData: TemperatureData;
+  }

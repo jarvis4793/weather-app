@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View, ViewStyle } from 'react-native';
+import { ImageBackground, Pressable, ScrollView, Text, TextInput, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SearchBar } from '@rneui/themed';
 import { fetchPublic } from '@/api/fetch';
@@ -35,6 +35,13 @@ export default function Index() {
             borderBottomWidth: 10,
         } as ViewStyle,
         cardContainer: {
+            flex: 1,
+            marginHorizontal: 0,
+            borderRadius: 15,
+            padding: 0,
+            overflow: 'hidden',
+        } as ViewStyle,
+        cardContent: {
             marginHorizontal: 0,
             borderRadius: 10,
         } as ViewStyle,
@@ -47,6 +54,29 @@ export default function Index() {
         locationText: {
             fontSize: 20,
             textAlign: "left",
+            color: "white",
+            fontWeight: "bold",
+            textShadowColor: 'black',
+            textShadowOffset: { width: 2, height: 2 },
+            textShadowRadius: 2,
+        } as ViewStyle,
+        locationTitle: {
+            fontSize: 15,
+            textAlign: "left",
+            color: "white",
+            fontWeight: "bold",
+            textShadowColor: 'black',
+            textShadowOffset: { width: 2, height: 2 },
+            textShadowRadius: 2,
+        } as ViewStyle,
+        remarksText: {
+            fontSize: 10,
+            textAlign: "left",
+            color: "white",
+            fontWeight: "bold",
+            textShadowColor: 'black',
+            textShadowOffset: { width: 2, height: 2 },
+            textShadowRadius: 2,
         } as ViewStyle,
         temperatureContainer: {
             flexDirection: "row",
@@ -54,14 +84,29 @@ export default function Index() {
         } as ViewStyle,
         temperatureSign: {
             fontSize: 30,
+            color: "white",
+            textShadowColor: 'black',
+            textShadowOffset: { width: 2, height: 2 },
+            textShadowRadius: 2,
         } as ViewStyle,
         temperatureText: {
             fontSize: 50,
-        } as ViewStyle
+            color: "white",
+            textShadowColor: 'black',
+            textShadowOffset: { width: 2, height: 2 },
+            textShadowRadius: 2,
+        } as ViewStyle,
+        image: {
+            flex: 1,
+            justifyContent: 'center',
+            borderRadius: 15,
+            overflow: 'hidden',
+            padding: 15
+        } as ViewStyle,
     };
-
     const [location, setLocation] = useState<Location.LocationObject>();
     const [address, setAddress] = useState<Location.LocationGeocodedAddress>();
+    const [currentLocationWeatherData, setCurrentLocationWeatherData] = useState<CurrentLocationWeatherData>();
     const {
         data: allWeatherData,
         isLoading: isAllWeatherData,
@@ -73,7 +118,6 @@ export default function Index() {
         queryFn: async ({ queryKey }) =>
             await fetchPublic(queryKey[0], queryKey[1], queryKey[2])
     });
-
     const reverseGeocode = async () => {
         if (location?.coords.longitude !== undefined && location?.coords.latitude !== undefined) {
             const reverseGeocodedAddress = await Location.reverseGeocodeAsync({
@@ -87,7 +131,6 @@ export default function Index() {
             }
         }
     }
-
     useEffect(() => {
         const getPermissions = async () => {
             let { status } = await Location.requestForegroundPermissionsAsync();
@@ -105,7 +148,6 @@ export default function Index() {
     useEffect(() => {
         reverseGeocode();
     }, [location]);
-
     useEffect(() => {
         if (allWeatherData) {
             let newWeatherLocationIndex: { [key: string]: number } = {};
@@ -117,8 +159,27 @@ export default function Index() {
             setWeatherLocationIndex(newWeatherLocationIndex);
             console.log("newWeatherLocationIndex: ");
             console.log(newWeatherLocationIndex);
+            if (address?.city && newWeatherLocationIndex[address.city]) {
+                let newCurrentLocationWeatherData: CurrentLocationWeatherData = {
+                    name: address.city,
+                    temperatureData: allWeatherData.temperature.data[newWeatherLocationIndex[address.city]],
+                    humidityData: allWeatherData.humidity.data[0]
+                }
+                setCurrentLocationWeatherData(newCurrentLocationWeatherData)
+            } else if (address?.city) {
+                let newCurrentLocationWeatherData: CurrentLocationWeatherData = {
+                    name: address.city,
+                    temperatureData: allWeatherData.temperature.data[1],
+                    humidityData: allWeatherData.humidity.data[0]
+                }
+                setCurrentLocationWeatherData(newCurrentLocationWeatherData)
+            }
         }
-    }, [allWeatherData, location])
+    }, [allWeatherData, address])
+    const imageList = [require('../assets/images/noaa-UJsUJr3cgEM-unsplash.jpeg'),
+    require('../assets/images/neda-astani-KWTkd7mHqKE-unsplash.jpeg'),
+    require('../assets/images/kenrick-mills-1h2Pg97SXfA-unsplash.jpg'),
+    require('../assets/images/valentin-muller-bWtd1ZyEy6w-unsplash.jpeg')]
     return (
         <View style={styles.container}>
             <Text style={styles.text}>香港各區氣溫</Text>
@@ -141,42 +202,43 @@ export default function Index() {
             <ScrollView>
                 <Pressable
                     onPress={() => {
-                        console.log("pressed")
                         setOverlayVisible(true)
                     }}
                 >
                     <View>
                         <Card wrapperStyle={styles.cardWrapper} containerStyle={styles.cardContainer}>
-                            <View>
-                                <Text>
-                                    {"我的位置"}
-                                </Text>
-                                <Text style={styles.locationText}>
-                                    {
-                                        (address?.city) ? address?.city : "Loading"
-                                    }
-                                </Text>
-                            </View>
-                            {
-                                address?.city && weatherLocationIndex[address?.city] !== undefined && allWeatherData !== null ? (
-                                    <View style={styles.temperatureContainer}>
-                                        <Text style={styles.temperatureText}>
-                                            {allWeatherData.temperature.data[weatherLocationIndex[address?.city]].value}
+                            <ImageBackground source={imageList[3]} resizeMode="cover" style={styles.image}>
+                                <View style={{ flex: 1, flexWrap: 'wrap', flexDirection: "row", justifyContent: "space-between" }} >
+                                    <View>
+                                        <Text style={styles.locationTitle}>
+                                            我的位置
                                         </Text>
-                                        <Text style={styles.temperatureSign}>
-                                            ° {allWeatherData.temperature.data[weatherLocationIndex[address?.city]].unit}
+                                        <Text style={styles.locationText}>
+                                            {
+                                                (address?.city) ? address?.city : "Loading"
+                                            }
                                         </Text>
                                     </View>
-                                ) : (
-                                    <View style={styles.temperatureContainer}>
-                                        <Text style={styles.temperatureText}>
-                                            {allWeatherData?.temperature.data[1].value}
-                                        </Text>
-                                        <Text style={styles.temperatureSign}>
-                                            °{allWeatherData?.temperature.data[1].unit}
-                                        </Text>
-                                    </View>)
-                            }
+                                    {
+                                        address?.city && currentLocationWeatherData !== undefined ? (
+                                            <View style={styles.temperatureContainer}>
+                                                <Text style={styles.temperatureText}>
+                                                    {currentLocationWeatherData.temperatureData.value}
+                                                </Text>
+                                                <Text style={styles.temperatureSign}>
+                                                    °{currentLocationWeatherData.temperatureData.unit}
+                                                </Text>
+                                            </View>
+                                        ) : null
+                                    }
+                                </View>
+                                <Text style={styles.remarksText}>
+                                    {
+                                        address?.city && weatherLocationIndex[address?.city] ? null :
+                                            ("該區沒有測量站，取香港天文台紀錄作平均值")
+                                    }
+                                </Text>
+                            </ImageBackground>
                         </Card>
                     </View>
                 </Pressable>
@@ -193,27 +255,33 @@ export default function Index() {
                         }
                         return (
                             <Card key={index} wrapperStyle={styles.cardWrapper} containerStyle={styles.cardContainer}>
-                                <View>
-                                    <Text style={styles.locationText}>
-                                        {temperatureData.place}
-                                    </Text>
-                                </View>
-                                <View style={styles.temperatureContainer}>
-                                    <Text style={styles.temperatureText}>
-                                        {temperatureData.value}
-                                    </Text>
-                                    <Text style={styles.temperatureSign}>
-                                        °{temperatureData.unit}
-                                    </Text>
-                                </View>
+                                <ImageBackground source={imageList[index % 4]} resizeMode="cover" style={styles.image}>
+                                    <View style={{ flex: 1, flexWrap: 'wrap', flexDirection: "row", justifyContent: "space-between" }} >
+                                        <View>
+                                            <Text style={styles.locationText}>
+                                                {temperatureData.place}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.temperatureContainer}>
+                                            <Text style={styles.temperatureText}>
+                                                {temperatureData.value}
+                                            </Text>
+                                            <Text style={styles.temperatureSign}>
+                                                °{temperatureData.unit}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </ImageBackground>
                             </Card>
                         );
                     })}
                 </View>
             </ScrollView>
-            {isOverlayVisible && (
-                <LocationWeatherDetail isVisible={isOverlayVisible} onCloseBottomSheet={() => setOverlayVisible(false)} />
-            )}
+            {
+                isOverlayVisible && currentLocationWeatherData !== undefined ? (
+                    <LocationWeatherDetail isVisible={isOverlayVisible} onCloseBottomSheet={() => setOverlayVisible(false)} currentLocationWeatherData={currentLocationWeatherData} />
+                ) : null
+            }
         </View >
     );
 }

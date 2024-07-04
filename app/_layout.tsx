@@ -8,11 +8,9 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
         </Stack>
-
       </SafeAreaProvider>
     </QueryClientProvider>
   );
